@@ -5,7 +5,7 @@ from flask_cors import CORS
 from flask import Flask
 
 from api.session_delete_api import session_blueprint
-from commons.env_info import HOST, PORT, ORG_NAME, LOG_LEVEL, LOG_GROUP_NAME, LOG_FORMAT
+from commons.env_info import HOST, PORT, DEBUG_MODE, ORG_NAME, LOG_LEVEL, LOG_GROUP_NAME, LOG_FORMAT
 
 app = Flask(__name__)
 CORS(app)
@@ -22,4 +22,4 @@ app.register_blueprint(session_blueprint)
 
 
 if __name__ == '__main__':
-    app.run(host=HOST, port=PORT, debug=True)
+    app.run(host=HOST, port=PORT, debug=DEBUG_MODE)
