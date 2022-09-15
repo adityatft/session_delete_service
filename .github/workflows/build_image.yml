@@ -1,0 +1,160 @@
+name: Build and Deploy to ECR
+
+on:
+
+  workflow_dispatch:
+    inputs:
+      Env:
+        type: choice
+        description: 'choose Environment' 
+        options: 
+        - dev
+        - stg
+        - prod
+        required: true
+      namespace:
+        description: 'namespace'
+        required: true
+        
+      
+      tag1:
+        description: 'Tag1  for image' 
+        required: true
+        default: latest
+      tag2:
+        description: 'Tag2 for image' 
+        required: true
+        
+      
+      
+      
+env:
+  CI: false
+  IMAGE_TAG1: ${{ github.event.inputs.tag1 }}
+  IMAGE_TAG2: ${{ github.event.inputs.tag2 }}
+  NAMESPACE: ${{ github.event.inputs.namespace }}       
+         
+
+jobs:
+    
+    
+ build:
+    
+    name: Build Image
+    runs-on: ubuntu-latest
+    if:  ${{ (github.event.inputs.Env == 'stg'  ||    github.event.inputs.Env == 'dev') }}
+   
+    steps:
+    
+    
+
+    - name: Check out code
+      uses: actions/checkout@v2
+        
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-south-1
+        
+    
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+      
+    - name: print inputs parameters
+      run: |
+         echo "${{ toJSON(github.event.inputs) }}"
+         echo "$(echo ${GITHUB_REF#refs/heads/})"
+          
+
+         
+
+    - name: Build, tag, and push image to Amazon ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: sm_delete 
+        IMAGE_TAG1: ${{ github.event.inputs.tag1 }}
+        IMAGE_TAG2: ${{ github.event.inputs.tag2 }}
+        namespace: ${{ github.event.inputs.namespace }}
+        
+      run: |
+      
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG1 -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG2  .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG1
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG2
+        
+    
+    - name: delete pod
+      run: |
+         kubectl get pods -n $NAMESPACE
+         kubectl delete pod -l app=cloudifytests-sm-delete  -n $NAMESPACE
+        
+        
+ Prod-build:
+    
+    name: Prod-Build Image
+    runs-on: ubuntu-latest
+    if:  ${{ github.event.inputs.Env == 'prod' }}
+   
+    steps:
+    
+    
+
+    - name: Check out code
+      uses: actions/checkout@v2
+        
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+        aws-region: us-east-1
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+      
+    - name: print inputs parameters
+      run: |
+         echo "${{ toJSON(github.event.inputs) }}"
+         echo "$(echo ${GITHUB_REF#refs/heads/})"
+         
+    - name: Install eksctl and aws cli
+      run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+          kubectl version --client
+          sudo apt-get install awscli
+          aws --version
+          aws eks update-kubeconfig --name cloudifytests --region us-east-1  
+         
+
+    - name: Build, tag, and push image to Amazon ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: sm-delete 
+        IMAGE_TAG1: ${{ github.event.inputs.tag1 }}
+        IMAGE_TAG2: ${{ github.event.inputs.tag2 }}
+        namespace: ${{ github.event.inputs.namespace }}
+        
+      run: |
+      
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG1 -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG2  .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG1
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG2
+        
+    - name: delete pod
+      run: |
+         kubectl get pods -n $NAMESPACE
+         kubectl delete pod -l app=cloudifytests-sm-delete -n $NAMESPACE
+        
+        
+      
+        
+
+        
