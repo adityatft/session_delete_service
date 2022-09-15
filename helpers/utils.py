@@ -37,6 +37,7 @@ def retry_func(func: t.Callable[..., t.Any], retry_limit: int = 6, pause_time: i
             func_res = func(**kwargs)  # function calling
 
             if func_res.status_code == 200:
+                current_app.logger.info(f" Func Response : {func_res}")
                 return func_res
             current_app.logger.info(f"Retrying to call API : {kwargs['url']}")
         except Exception as err:
@@ -57,6 +58,7 @@ def update_session(**kwargs):
     current_app.logger.info(f"Function Name ==>> {inspect.stack()[0][3]}")
 
     if "url" in kwargs and "data" in kwargs:
+        current_app.logger.info(f"API URL : {kwargs['url']}")
         return requests.put(url=kwargs["url"], data=json.dumps(kwargs["data"]), headers=env_info.HEADERS)
     else:
         raise f"Required information for update_function API not correct."
@@ -71,6 +73,7 @@ def get_endpoint_api(**kwargs):
     """
     current_app.logger.info(f"Function Name ==>> {inspect.stack()[0][3]}")
     if "url" in kwargs:
+        current_app.logger.info(f"API URL : {kwargs['url']}")
         return requests.get(url=kwargs["url"], headers=env_info.HEADERS)
     else:
         raise f"Required information for {kwargs['url']} API not correct."
