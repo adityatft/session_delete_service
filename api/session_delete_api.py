@@ -4,13 +4,11 @@
 
 from __future__ import annotations
 
-import logging
-from flask import Blueprint
+from flask import Blueprint, current_app
 
 from commons.base_response import BaseResponse
 from methods.delete_session import delete_session
 
-LOGGER = logging.getLogger('watchtower')
 
 session_blueprint = Blueprint("session_blueprint", __name__)
 
@@ -36,10 +34,10 @@ def delete_session_handler(pod_name=None, session_id=None, delete_type=None):
         if "firefox" in pod_name:
             session_id = "".join(session_id.split("-"))
 
-        LOGGER.info(f"delete_session_handler called with session_id: {session_id}")
+        current_app.logger.info(f"delete_session_handler called with session_id: {session_id}")
         delete_session(base_response=base_response, pod_name=pod_name, session_id=session_id, delete_type=delete_type)
     except Exception as err:
-        LOGGER.error(err)
+        current_app.logger.error(err)
 
     return base_response.data, base_response.status_code
 
@@ -62,9 +60,9 @@ def timeout_session_handler(pod_name=None, req_id=None, delete_type=None):
     base_response = BaseResponse()
 
     try:
-        LOGGER.info(f"timeout_session_handler called with request_id: {req_id}")
+        current_app.logger.info(f"timeout_session_handler called with request_id: {req_id}")
         delete_session(base_response=base_response, pod_name=pod_name, request_id=req_id, delete_type=delete_type)
     except Exception as err:
-        LOGGER.error(err)
+        current_app.logger.error(err)
 
     return base_response.data, base_response.status_code

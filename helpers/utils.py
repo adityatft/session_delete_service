@@ -6,14 +6,12 @@ import inspect
 import json
 import time
 import typing as t
-import logging
 
 import boto3
 import requests
 
+from flask import current_app
 from commons import env_info
-
-LOGGER = logging.getLogger('watchtower')
 
 
 def retry_func(func: t.Callable[..., t.Any], retry_limit: int = 6, pause_time: int = 5, **kwargs: t.Any):
@@ -29,20 +27,20 @@ def retry_func(func: t.Callable[..., t.Any], retry_limit: int = 6, pause_time: i
         :return response from API
         :rtype: json object
     """
-    LOGGER.info(f"Function Name ==>> {inspect.stack()[0][3]}")
+    current_app.logger.info(f"Function Name ==>> {inspect.stack()[0][3]}")
     retry_count = 0
     while retry_count < retry_limit:
         try:
             if retry_count > 0:
-                LOGGER.info(f"RETRY FUNC WORKING COUNT : {retry_count}")
+                current_app.logger.info(f"RETRY FUNC WORKING COUNT : {retry_count}")
 
             func_res = func(**kwargs)  # function calling
 
             if func_res.status_code == 200:
                 return func_res
-            LOGGER.info(f"Retrying to call API : {kwargs['url']}")
+            current_app.logger.info(f"Retrying to call API : {kwargs['url']}")
         except Exception as err:
-            LOGGER.warning(err)
+            current_app.logger.warning(err)
         retry_count += 1
         time.sleep(pause_time)
 
@@ -56,7 +54,7 @@ def update_session(**kwargs):
         :return response from API
         :rtype: json object
     """
-    LOGGER.info(f"Function Name ==>> {inspect.stack()[0][3]}")
+    current_app.logger.info(f"Function Name ==>> {inspect.stack()[0][3]}")
 
     if "url" in kwargs and "data" in kwargs:
         return requests.put(url=kwargs["url"], data=json.dumps(kwargs["data"]), headers=env_info.HEADERS)
@@ -71,7 +69,7 @@ def get_endpoint_api(**kwargs):
         :return response from API
         :rtype: json object
     """
-    LOGGER.info(f"Function Name ==>> {inspect.stack()[0][3]}")
+    current_app.logger.info(f"Function Name ==>> {inspect.stack()[0][3]}")
     if "url" in kwargs:
         return requests.get(url=kwargs["url"], headers=env_info.HEADERS)
     else:
@@ -85,8 +83,8 @@ def upload_to_s3(key, data):
         :param : data: data to be uploaded to S3 bucket.
         :type: data: str
     """
-    LOGGER.info(f"Function Name ==>> {inspect.stack()[0][3]}")
-    LOGGER.info(f"Uploading data to S3 for organization : {env_info.ORG_NAME}.")
+    current_app.logger.info(f"Function Name ==>> {inspect.stack()[0][3]}")
+    current_app.logger.info(f"Uploading data to S3 for organization : {env_info.ORG_NAME}.")
     try:
         s3_obj = boto3.resource(service_name="s3",
                                 aws_access_key_id=env_info.AWS_ACCESS_KEY,
@@ -94,16 +92,16 @@ def upload_to_s3(key, data):
         s3_obj.Bucket(env_info.S3_BUCKET).put_object(Key=key,
                                                      Body=data,
                                                      ContentType="text/plain")
-        LOGGER.info(f"Successfully uploaded logs data to S3 for organization : {env_info.ORG_NAME}.")
+        current_app.logger.info(f"Successfully uploaded logs data to S3 for organization : {env_info.ORG_NAME}.")
     except Exception as err:
-        LOGGER.error(f"Exception when calling S3 Boto3 API: {err}")
+        current_app.logger.warning(f"Exception when calling S3 Boto3 API: {err}")
 
 
 def get_session_deleted_response() -> t.Dict[str, t.Any]:
     """
         https://w3c.github.io/webdriver/#delete-session
     """
-    LOGGER.info(f"Function Name ==>> {inspect.stack()[0][3]}")
+    current_app.logger.info(f"Function Name ==>> {inspect.stack()[0][3]}")
     return {'value': None}
 
 
@@ -114,7 +112,7 @@ def get_delete_type(delete_type: str = None) -> t.Dict[str, t.Any]:
         :return dict with status
         :rtype: dict
     """
-    LOGGER.info(f"Function Name ==>> {inspect.stack()[0][3]}")
+    current_app.logger.info(f"Function Name ==>> {inspect.stack()[0][3]}")
     if delete_type == "aborted":
         status_data = {"status": "aborted"}
     elif delete_type == "timeout":
@@ -133,7 +131,7 @@ def get_generated_urls(request_id: str = None, session_id: str = None) -> [t.Any
         :return tuple of urls
         :rtype: tuple
     """
-    LOGGER.info(f"Function Name ==>> {inspect.stack()[0][3]}")
+    current_app.logger.info(f"Function Name ==>> {inspect.stack()[0][3]}")
     if session_id:
         session_details_url = f"{env_info.ROOT_URL}/get-session-details/session/{session_id}"
         update_url = f"{env_info.ROOT_URL}/update-session-status/session/{session_id}"
