@@ -50,13 +50,13 @@ def delete_pod(namespace: str, pod_name: str) -> None:
         :param : pod_name: name of k8s pod
         :type: pod_name: str
     """
-    current_app.logger.info(f"Function Name ==>> {inspect.stack()[0][3]}")
-    current_app.logger.info(f"Deleting pod : {pod_name} in namespace : {namespace}.")
+    print(f"Function Name ==>> {inspect.stack()[0][3]}")
+    print(f"Deleting pod : {pod_name} in namespace : {namespace}.")
     try:
         V1_INSTANCE.delete_namespaced_pod(name=pod_name, namespace=namespace)
-        current_app.logger.info(f"Successfully deleted pod : {pod_name} in namespace : {namespace}.")
+        print(f"Successfully deleted pod : {pod_name} in namespace : {namespace}.")
     except ApiException as err:
-        current_app.logger.warning(f"Exception when calling CoreV1Api->delete_namespaced_pod: {err}")
+        print(f"Exception when calling CoreV1Api->delete_namespaced_pod: {err}")
         if err.status == 403:
             raise Exception(f"Can't delete pod `{pod_name}` in namespace `{namespace}`") from err
         if err.status == 404:
@@ -75,16 +75,16 @@ def get_pod_logs(namespace: str, pod_name: str, container_name: str):
         :return logs_data from k8s pod
         :rtype: text/plain
     """
-    current_app.logger.info(f"Function Name ==>> {inspect.stack()[0][3]}")
-    current_app.logger.info(f"Fetching pod logs for: {pod_name} in namespace : {namespace}.")
+    print(f"Function Name ==>> {inspect.stack()[0][3]}")
+    print(f"Fetching pod logs for: {pod_name} in namespace : {namespace}.")
     logs_data = ""
     try:
         logs_data = V1_INSTANCE.read_namespaced_pod_log(name=pod_name,
                                                         namespace=namespace,
                                                         container=container_name)
-        current_app.logger.info(f"Successfully fetched logs for pod name : `{pod_name}`")
+        print(f"Successfully fetched logs for pod name : `{pod_name}`")
     except ApiException as err:
-        current_app.logger.warning(f"Exception when calling CoreV1Api->read_namespaced_pod_log: {err}")
+        print(f"Exception when calling CoreV1Api->read_namespaced_pod_log: {err}")
     return logs_data
 
 

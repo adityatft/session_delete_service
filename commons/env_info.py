@@ -29,6 +29,9 @@ POD_DELETION_WAIT_TIME = int(os.environ.get("POD_WAIT_TIME"))
 FUNC_RETRY_LIMIT = int(os.environ.get("RETRY_LIMIT"))
 FUNC_RETRY_PAUSE_TIME = int(os.environ.get("RETRY_PAUSE_TIME"))
 
+DELETE_REDIS_HOST = os.environ.get("DELETE_REDIS_HOST")
+DELETE_REDIS_PORT = int(os.environ.get("DELETE_REDIS_PORT"))
+
 HEADERS = {
     "Content-Type": "application/json"
 }
