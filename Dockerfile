@@ -1,16 +1,31 @@
-FROM python:alpine3.8
+ARG IMAGE=python:alpine3.8
+
+FROM $IMAGE as build-stage
 
 ENV VIRTUAL_ENV=/app/venv
 RUN python3 -m venv $VIRTUAL_ENV
+ENV PYTHONUNBUFFERED 1
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
+RUN apk update \
+    && apk add --no-cache build-base gcc curl dpkg
+
+RUN dpkg --add-architecture i386
+
 WORKDIR /app
-COPY . /app/
+COPY . /app
 
 RUN pip3 install --upgrade pip
 RUN pip3 install -r requirements.txt
+RUN pip3 install pyinstaller
+RUN pyinstaller  main.py
+
+FROM $IMAGE
+
+WORKDIR /app
+COPY --from=build-stage /app/dist/main /app
 
 EXPOSE 5002
 
-CMD ["python", "main.py"]
+CMD ["./main"]
 #CMD ["watch", "date"]
