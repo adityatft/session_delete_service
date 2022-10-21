@@ -18,12 +18,12 @@ COPY . /app
 RUN pip3 install --upgrade pip
 RUN pip3 install -r requirements.txt
 RUN pip3 install pyinstaller
-RUN pyinstaller  main.py
+RUN pyinstaller --onefile main.py
 
 FROM $IMAGE
 
 WORKDIR /app
-COPY --from=build-stage /app/dist/main /app
+COPY --from=build-stage /app/dist/ /app
 
 EXPOSE 5002
 
