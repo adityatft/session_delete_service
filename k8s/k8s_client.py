@@ -12,7 +12,7 @@ from kubernetes import config, client
 from kubernetes.client import V1Pod
 # from kubernetes.watch import watch
 from kubernetes.client.exceptions import ApiException
-
+from commons import env_info
 
 try:
     config.load_kube_config()
@@ -139,3 +139,26 @@ def get_pod_ip(pod: V1Pod) -> t.Any | None:
 #
 #     w.stop()
 #     return status
+
+def check_backend_pod_availability():
+    """
+        Check if org namespace contains backend pod
+    """
+    current_app.logger.info(f"Helper function for checking backend pod in given namespace {env_info.ORG_NAME}.")
+    try:
+        result = V1_INSTANCE.list_namespaced_pod(namespace=env_info.ORG_NAME,
+                                                    label_selector='app=cloudifytests-session-be').to_dict()
+
+        if len(result["items"]) == 0:
+            current_app.logger.warning(f"No backend pod was found in the namespace {env_info.ORG_NAME}.")
+            return False
+        else:
+            current_app.logger.warning(f"Backend pod was found in the namespace {env_info.ORG_NAME}.")
+            return True
+
+    except client.ApiException as e:
+        current_app.logger.error(e)
+        if e.status == 403:
+            raise exceptions.K8SForbidden(e)
+        if e.status == 404:
+            raise exceptions.K8sPodNotFound(e)

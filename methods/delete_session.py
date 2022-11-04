@@ -30,13 +30,17 @@ def delete_session(pod_name: str, session_id: str = None, request_id: str = None
         :param : base_response:  Base Response object{data:{...}, msg:"...", status: ...}
         :type: base_response: json object
     """
+    backend_pod_availability = k8s_client.check_backend_pod_availability()
+
     current_app.logger.info(f"Function Name ==>> {inspect.stack()[0][3]}")
     current_app.logger.info(f"deleting pod name : {pod_name}")
     current_app.logger.info(f"pod_name: {pod_name}, session_id: {session_id}, request_id: {request_id}, delete_type: {delete_type}")
 
     session_data = {}
 
-    session_details_url, update_url = get_generated_urls(session_id=session_id, request_id=request_id)
+    if backend_pod_availability:
+        session_details_url, update_url = get_generated_urls(session_id=session_id, request_id=request_id)
+
     status_data = get_delete_type(delete_type=delete_type)
 
     try:
@@ -46,51 +50,54 @@ def delete_session(pod_name: str, session_id: str = None, request_id: str = None
         current_app.logger.info(f"Pod Name: {pod_name} && Pod IP : {pod_ip}, session_id: {session_id}, request_id: {request_id}")
 
         current_app.logger.info(f"/get-session-details api called with pod_name: {pod_name}")
-        get_session_details_res = retry_func(func=get_endpoint_api,
-                                             retry_limit=env_info.FUNC_RETRY_LIMIT,
-                                             pause_time=env_info.FUNC_RETRY_PAUSE_TIME,
-                                             url=session_details_url)
+        if backend_pod_availability:
+            get_session_details_res = retry_func(func=get_endpoint_api,
+                                                retry_limit=env_info.FUNC_RETRY_LIMIT,
+                                                pause_time=env_info.FUNC_RETRY_PAUSE_TIME,
+                                                url=session_details_url)
 
-        if get_session_details_res.status_code == 200:
-            get_session_details_res = get_session_details_res.json()
-            session_data = get_session_details_res["data"]
-            current_app.logger.info(f"Session data from backend : {session_data}")
+            if get_session_details_res.status_code == 200:
+                get_session_details_res = get_session_details_res.json()
+                session_data = get_session_details_res["data"]
+                current_app.logger.info(f"Session data from backend : {session_data}")
 
-            if session_data["enable_video"]:
-                current_app.logger.info(f"/stop-recording api called with pod_name: {pod_name}")
-                stop_recording_url = f"http://{pod_ip}:9092/stop-recording"
+                if session_data["enable_video"]:
+                    current_app.logger.info(f"/stop-recording api called with pod_name: {pod_name}")
+                    stop_recording_url = f"http://{pod_ip}:9092/stop-recording"
 
+                    start_time = datetime.now()
+
+                    recording_res = retry_func(func=get_endpoint_api,
+                                            retry_limit=env_info.FUNC_RETRY_LIMIT,
+                                            pause_time=env_info.FUNC_RETRY_PAUSE_TIME,
+                                            url=stop_recording_url)
+                    total_time_diff = (datetime.now() - start_time).total_seconds()
+                    current_app.logger.info(f"Total time for video to stop and upload : {total_time_diff}")
+
+                    if recording_res.status_code == 200:
+                        current_app.logger.info("Video recording successfully stopped.")
+                    else:
+                        current_app.logger.info("Couldn't stop video recorder.")
+            current_app.logger.info(get_session_details_res["msg"])
+
+        if backend_pod_availability:
+            if "enable_logs" in session_data and session_data["enable_logs"]:
                 start_time = datetime.now()
+                logs_data = k8s_client.get_pod_logs(namespace=env_info.ORG_NAME, pod_name=pod_name, container_name="browser")
 
-                recording_res = retry_func(func=get_endpoint_api,
-                                           retry_limit=env_info.FUNC_RETRY_LIMIT,
-                                           pause_time=env_info.FUNC_RETRY_PAUSE_TIME,
-                                           url=stop_recording_url)
+                current_app.logger.info(f"s3 put_object called for pod_name: {pod_name}")
+                upload_to_s3(key=session_data["log_name"], data=logs_data)
                 total_time_diff = (datetime.now() - start_time).total_seconds()
-                current_app.logger.info(f"Total time for video to stop and upload : {total_time_diff}")
+                current_app.logger.info(f"Total time to fetch logs and upload : {total_time_diff}")
 
-                if recording_res.status_code == 200:
-                    current_app.logger.info("Video recording successfully stopped.")
-                else:
-                    current_app.logger.info("Couldn't stop video recorder.")
-        current_app.logger.info(get_session_details_res["msg"])
+        if backend_pod_availability:
+            current_app.logger.info(f"Calling update_session. pod_name: {pod_name}")
 
-        if "enable_logs" in session_data and session_data["enable_logs"]:
-            start_time = datetime.now()
-            logs_data = k8s_client.get_pod_logs(namespace=env_info.ORG_NAME, pod_name=pod_name, container_name="browser")
-
-            current_app.logger.info(f"s3 put_object called for pod_name: {pod_name}")
-            upload_to_s3(key=session_data["log_name"], data=logs_data)
-            total_time_diff = (datetime.now() - start_time).total_seconds()
-            current_app.logger.info(f"Total time to fetch logs and upload : {total_time_diff}")
-
-        current_app.logger.info(f"Calling update_session. pod_name: {pod_name}")
-
-        retry_func(func=update_session,
-                   retry_limit=env_info.FUNC_RETRY_LIMIT,
-                   pause_time=env_info.FUNC_RETRY_PAUSE_TIME,
-                   url=update_url,
-                   data=status_data)
+            retry_func(func=update_session,
+                    retry_limit=env_info.FUNC_RETRY_LIMIT,
+                    pause_time=env_info.FUNC_RETRY_PAUSE_TIME,
+                    url=update_url,
+                    data=status_data)
 
         k8s_client.delete_pod(namespace=env_info.ORG_NAME, pod_name=pod_name)
 
@@ -100,12 +107,13 @@ def delete_session(pod_name: str, session_id: str = None, request_id: str = None
 
     except Exception as err:
         current_app.logger.error(err)
-        retry_func(func=update_session,
-                   retry_limit=env_info.FUNC_RETRY_LIMIT,
-                   pause_time=env_info.FUNC_RETRY_PAUSE_TIME,
-                   url=update_url,
-                   data=status_data)
+        if backend_pod_availability:
+            retry_func(func=update_session,
+                    retry_limit=env_info.FUNC_RETRY_LIMIT,
+                    pause_time=env_info.FUNC_RETRY_PAUSE_TIME,
+                    url=update_url,
+                    data=status_data)
 
         base_response.data = get_session_deleted_response()
         base_response.msg = SESSION_NOT_DELETED
-        raise f"BaseException for pod_name: {pod_name}, session_id: {session_id}, request_id: {request_id}"
+        raise f"BaseException for pod_name: {pod_name}, session_id: {session_id}"
