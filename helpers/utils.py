@@ -136,11 +136,11 @@ def get_generated_urls(request_id: str = None, session_id: str = None) -> [t.Any
     """
     current_app.logger.info(f"Function Name ==>> {inspect.stack()[0][3]}")
     if session_id:
-        session_details_url = f"{env_info.ROOT_URL}/get-session-details/session/{session_id}"
-        update_url = f"{env_info.ROOT_URL}/update-session-status/session/{session_id}"
+        session_details_url = f"{env_info.ROOT_URL}/api/sessions/live/get-session-details/session/{session_id}"
+        update_url = f"{env_info.ROOT_URL}/api/sessions/live/update-session-status/session/{session_id}"
     else:
-        session_details_url = f"{env_info.ROOT_URL}/get-session-details/request/{request_id}"
-        update_url = f"{env_info.ROOT_URL}/update-session-status/request/{request_id}"
+        session_details_url = f"{env_info.ROOT_URL}/api/sessions/live/get-session-details/request/{request_id}"
+        update_url = f"{env_info.ROOT_URL}/api/sessions/live/update-session-status/request/{request_id}"
 
     return session_details_url, update_url
 
