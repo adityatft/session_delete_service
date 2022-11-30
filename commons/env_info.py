@@ -19,15 +19,16 @@ REGION_NAME = os.environ.get("AWS_DEFAULT_REGION")
 ECR_BROWSER_IMAGES = os.environ.get("AWS_ECR_IMAGE")
 S3_BUCKET = os.environ.get("S3_BUCKET")
 
-
 LOG_LEVEL = os.environ.get("LOG_LEVEL")
 LOG_FORMAT = os.environ.get("LOG_FORMAT")
 LOG_GROUP_NAME = os.environ.get("LOG_GROUP_NAME")
 
-
 POD_DELETION_WAIT_TIME = int(os.environ.get("POD_WAIT_TIME"))
 FUNC_RETRY_LIMIT = int(os.environ.get("RETRY_LIMIT"))
 FUNC_RETRY_PAUSE_TIME = int(os.environ.get("RETRY_PAUSE_TIME"))
+
+REDIS_HOST = os.environ.get("ORG_REDIS_HOST")
+REDIS_PORT = int(os.environ.get("ORG_REDIS_PORT"))
 
 HEADERS = {
     "Content-Type": "application/json"

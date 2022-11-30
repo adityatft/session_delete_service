@@ -1,13 +1,9 @@
-"""
-    Session Manager DELETE API Endpoints
-"""
-
 from __future__ import annotations
 
 from flask import Blueprint, current_app
 
 from commons.base_response import BaseResponse
-from methods.delete_session import delete_session
+from api.delete_session import delete_session
 
 
 session_blueprint = Blueprint("session_blueprint", __name__)

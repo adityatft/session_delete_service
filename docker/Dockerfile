@@ -19,13 +19,15 @@ RUN pip3 install --upgrade pip
 RUN pip3 install -r requirements.txt
 RUN pip3 install pyinstaller
 RUN pyinstaller --onefile main.py
-
-FROM $IMAGE
-
-WORKDIR /app
-COPY --from=build-stage /app/dist/ /app
+#
+#FROM $IMAGE
+#
+#WORKDIR /app
+#COPY --from=build-stage /app/dist/ /app
+#COPY --from=build-stage /app/docker/entrypoint.sh /app
 
 EXPOSE 5002
 
-CMD ["./main"]
-#CMD ["watch", "date"]
+CMD ["watch", "date"]
+#RUN chmod +x entrypoint.sh
+#ENTRYPOINT ["entrypoint.sh"]

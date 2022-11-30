@@ -1,7 +1,3 @@
-"""
-    Modules to interact with Kubernetes services.
-"""
-
 from __future__ import annotations
 
 import inspect
@@ -10,7 +6,6 @@ import typing as t
 from flask import current_app
 from kubernetes import config, client
 from kubernetes.client import V1Pod
-# from kubernetes.watch import watch
 from kubernetes.client.exceptions import ApiException
 from commons import env_info
 
@@ -50,13 +45,13 @@ def delete_pod(namespace: str, pod_name: str) -> None:
         :param : pod_name: name of k8s pod
         :type: pod_name: str
     """
-    current_app.logger.info(f"Function Name ==>> {inspect.stack()[0][3]}")
-    current_app.logger.info(f"Deleting pod : {pod_name} in namespace : {namespace}.")
+    print(f"Function Name ==>> {inspect.stack()[0][3]}")
+    print(f"Deleting pod : {pod_name} in namespace : {namespace}.")
     try:
         V1_INSTANCE.delete_namespaced_pod(name=pod_name, namespace=namespace)
-        current_app.logger.info(f"Successfully deleted pod : {pod_name} in namespace : {namespace}.")
+        print(f"Successfully deleted pod : {pod_name} in namespace : {namespace}.")
     except ApiException as err:
-        current_app.logger.warning(f"Exception when calling CoreV1Api->delete_namespaced_pod: {err}")
+        print(f"Exception when calling CoreV1Api->delete_namespaced_pod: {err}")
         if err.status == 403:
             raise Exception(f"Can't delete pod `{pod_name}` in namespace `{namespace}`") from err
         if err.status == 404:
@@ -75,16 +70,16 @@ def get_pod_logs(namespace: str, pod_name: str, container_name: str):
         :return logs_data from k8s pod
         :rtype: text/plain
     """
-    current_app.logger.info(f"Function Name ==>> {inspect.stack()[0][3]}")
-    current_app.logger.info(f"Fetching pod logs for: {pod_name} in namespace : {namespace}.")
+    print(f"Function Name ==>> {inspect.stack()[0][3]}")
+    print(f"Fetching pod logs for: {pod_name} in namespace : {namespace}.")
     logs_data = ""
     try:
         logs_data = V1_INSTANCE.read_namespaced_pod_log(name=pod_name,
                                                         namespace=namespace,
                                                         container=container_name)
-        current_app.logger.info(f"Successfully fetched logs for pod name : `{pod_name}`")
+        print(f"Successfully fetched logs for pod name : `{pod_name}`")
     except ApiException as err:
-        current_app.logger.warning(f"Exception when calling CoreV1Api->read_namespaced_pod_log: {err}")
+        print(f"Exception when calling CoreV1Api->read_namespaced_pod_log: {err}")
     return logs_data
 
 
@@ -106,40 +101,6 @@ def get_pod_ip(pod: V1Pod) -> t.Any | None:
     return pod_ip
 
 
-# def get_watch_pod_status(namespace: str, pod_name: str, status_type: str, timeout: int = 120) -> bool:
-#     """
-#         :param : namespace: namespace of k8s
-#         :type: namespace: str
-#         :param : pod_name: name of k8s pod
-#         :type: pod_name: str
-#         :param : status_type: status of pod for which watch_pod stream should run
-#         :type: status_type: str
-#         :param : timeout: time for which watch_pod stream should run
-#         :type: timeout: int
-#         :return True/False status flag value
-#         :rtype: bool
-#     """
-#     status = False
-#     k8_func = None
-#     w = watch.Watch()
-#
-#     if status_type == "Running":
-#         k8_func = V1_INSTANCE.read_namespaced_pod
-#     elif status_type == "Terminating":
-#         k8_func = V1_INSTANCE.delete_namespaced_pod
-#
-#     for event in w.stream(func=k8_func,
-#                           namespace=namespace,
-#                           name=pod_name,
-#                           timeout_seconds=timeout):
-#         if event["object"].status.phase == status_type:
-#             w.stop()
-#             status = True
-#             return status
-#
-#     w.stop()
-#     return status
-
 def check_backend_pod_availability():
     """
         Check if org namespace contains backend pod
@@ -159,6 +120,6 @@ def check_backend_pod_availability():
     except client.ApiException as e:
         current_app.logger.error(e)
         if e.status == 403:
-            raise exceptions.K8SForbidden(e)
+            raise Exception(e)
         if e.status == 404:
-            raise exceptions.K8sPodNotFound(e)
+            raise Exception(e)
