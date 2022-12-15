@@ -1,10 +1,10 @@
 import os
-import env_file
+# import env_file
 
-try:
-    env_file.load(".env")
-except Exception as err:
-    pass
+# try:
+#     env_file.load(".env")
+# except Exception as err:
+#     pass
 
 HOST = os.environ.get("HOST")
 PORT = os.environ.get("PORT")

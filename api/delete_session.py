@@ -10,6 +10,8 @@ from commons.static_messages import SESSION_DELETED_SUCCESSFULLY, SESSION_NOT_DE
 from helpers.utils import get_session_deleted_response, update_session, get_delete_type, get_generated_urls, get_session_details
 from tasks import background_video_k8s_pod_task
 
+from flask_log_request_id import current_request_id
+
 
 def delete_session(pod_name: str, session_id: str = None, request_id: str = None, delete_type: str = None, base_response = None):
     """
@@ -54,7 +56,8 @@ def delete_session(pod_name: str, session_id: str = None, request_id: str = None
                     'pod_name': pod_name,
                     # 'update_url': update_url,
                 }
-                background_video_k8s_pod_task.delay(data=data)
+                if ("enable_video" in session_data and session_data["enable_video"]) or ("enable_logs" in session_data and session_data["enable_logs"]):
+                    background_video_k8s_pod_task.delay(data=data, request_id=current_request_id())
             current_app.logger.info(get_session_details_res["msg"])
 
             current_app.logger.info(f"Calling update_session. pod_name: {pod_name}")
