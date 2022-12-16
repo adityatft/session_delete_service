@@ -1,13 +1,10 @@
-from celery import Celery
-from celery.bin import worker
-
 import json
 import requests
-
 import watchtower
 import logging
-
 import os
+
+from celery import Celery
 # import env_file
 
 # try:
@@ -21,7 +18,7 @@ LOG_FORMAT = os.environ.get("LOG_FORMAT")
 HEADERS = {
     "Content-Type": "application/json"
 }
-ROOT_URL = os.path.join(os.environ.get("BASE_URL"), os.environ.get("BACKEND_URL"))
+BASE_URL = "http://" + os.environ.get("HOST") + ":" + os.environ.get("PORT")
 REDIS_HOST = os.environ.get("ORG_REDIS_HOST")
 REDIS_PORT = int(os.environ.get("ORG_REDIS_PORT"))
 
@@ -49,12 +46,13 @@ logger.addHandler(handler)
 def background_video_k8s_pod_task(data, request_id):
 
     logger.info(f"Celery task background_video_k8s_pod_task recieved for pod {data['pod_name']}", extra={"request_id": request_id})
-    url = f"{ROOT_URL}api/v1/save_video_log_k8d_pods"
+    video_log_url = f"{BASE_URL}/api/v1/save_video_log_k8d_pods"
 
     payload = json.dumps(data)
 
+    logger.info(f"Video log save url is {video_log_url}", extra={"request_id": request_id})
     logger.info(f"Calling save_video_log_k8d_pods_handler API with payload {payload}", extra={"request_id": request_id})
-    requests.request("POST", url, headers=HEADERS, data=payload)
+    requests.post(url=video_log_url, headers=HEADERS, data=payload)
 
     logger.info(f"Background task background_video_k8s_pod_task successfully completed for pod {data['pod_name']}", extra={"request_id": request_id})
 

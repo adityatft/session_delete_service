@@ -166,8 +166,7 @@ def save_video_log_k8d_pods(data):
     """
 
     try:
-        data = json.loads(request.data)
-        print(data)
+        data = json.loads(data)
 
         session_data = data['session_data']
         pod_name = data['pod_name']
