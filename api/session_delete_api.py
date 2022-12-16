@@ -1,13 +1,12 @@
-"""
-    Session Manager DELETE API Endpoints
-"""
-
 from __future__ import annotations
 
-from flask import Blueprint, current_app
+from flask import Blueprint, current_app, request
 
 from commons.base_response import BaseResponse
-from methods.delete_session import delete_session
+from api.delete_session import delete_session
+from helpers.utils import save_video_log_k8d_pods
+
+from http import HTTPStatus
 
 
 session_blueprint = Blueprint("session_blueprint", __name__)
@@ -64,5 +63,27 @@ def timeout_session_handler(pod_name=None, req_id=None, delete_type=None):
         delete_session(base_response=base_response, pod_name=pod_name, request_id=req_id, delete_type=delete_type)
     except Exception as err:
         current_app.logger.error(err)
+
+    return base_response.data, base_response.status_code
+
+
+@session_blueprint.route('/api/v1/save_video_log_k8d_pods', methods=['POST'])
+def save_video_log_k8d_pods_handler():
+    """
+        API(POST) to save videos, logs and delete pod.
+
+        :return: Base Response object{data:{...}, msg:"...", status: ...}
+        :rtype: json object
+    """
+    base_response = BaseResponse()
+
+    try:
+        current_app.logger.info(f"Calling save_video_log_k8d_pods function for request {request.data}")
+        save_video_log_k8d_pods(data=request.data)
+    except Exception as err:
+        current_app.logger.error(err)
+        base_response.msg = err
+        base_response.status_code = HTTPStatus.INTERNAL_SERVER_ERROR
+        return base_response.data, base_response.status_code
 
     return base_response.data, base_response.status_code
