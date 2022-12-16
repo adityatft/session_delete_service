@@ -1,7 +1,3 @@
-"""
-    Helper functions
-"""
-
 import inspect
 import json
 import time
@@ -154,36 +150,35 @@ def get_generated_urls(request_id: str = None, session_id: str = None) -> [t.Any
     """
     current_app.logger.info(f"Function Name ==>> {inspect.stack()[0][3]}")
     if session_id:
-        session_details_url = f"{env_info.ROOT_URL}/get-session-details/session/{session_id}"
-        update_url = f"{env_info.ROOT_URL}/update-session-status/session/{session_id}"
+        session_details_url = f"{env_info.ROOT_URL}/api/sessions/live/get-session-details/session/{session_id}"
+        update_url = f"{env_info.ROOT_URL}/api/sessions/live/update-session-status/session/{session_id}"
     else:
-        session_details_url = f"{env_info.ROOT_URL}/get-session-details/request/{request_id}"
-        update_url = f"{env_info.ROOT_URL}/update-session-status/request/{request_id}"
+        session_details_url = f"{env_info.ROOT_URL}/api/sessions/live/get-session-details/request/{request_id}"
+        update_url = f"{env_info.ROOT_URL}/api/sessions/live/update-session-status/request/{request_id}"
 
     return session_details_url, update_url
 
 
-def save_video_log_k8d_pods(data: dict = None):
+def save_video_log_k8d_pods(data):
     """
         :param : data: dict of session_data, pod_name, pod_ip, update_url, status_data
         :type: data: dict
     """
-    print(data)
-
-    session_data = data['session_data']
-    pod_name = data['pod_name']
-    pod_ip = data['pod_ip']
-    # update_url = data['update_url']  # Future use case for handling multiple status states.
 
     try:
+        data = json.loads(data)
+
+        session_data = data['session_data']
+        pod_name = data['pod_name']
+        pod_ip = data['pod_ip']
+        # update_url = data['update_url']  # Future use case for handling multiple status states.
+
         if "enable_video" in session_data and session_data["enable_video"]:
             print(f"/stop-recording api called with pod_name: {pod_name}")
             stop_recording_url = f"http://{pod_ip}:9092/stop-recording"
 
             start_time = datetime.now()
-
             recording_res = stop_video_recording_api(url=stop_recording_url)
-
             total_time_diff = (datetime.now() - start_time).total_seconds()
             print(f"Total time for video to stop and upload : {total_time_diff}")
 
