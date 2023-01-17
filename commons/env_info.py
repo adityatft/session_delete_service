@@ -8,7 +8,10 @@ import os
 
 HOST = os.environ.get("HOST")
 PORT = os.environ.get("PORT")
-DEBUG_MODE = os.environ.get("DEBUG_MODE")
+if os.environ.get("DEBUG_MODE") in ["True", "true"]:
+    DEBUG_MODE = True
+else:
+    DEBUG_MODE = False
 
 ROOT_URL = os.path.join(os.environ.get("BASE_URL"), os.environ.get("BACKEND_URL"))
 ORG_NAME = os.environ.get("ORG_NAME")
