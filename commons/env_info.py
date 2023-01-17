@@ -29,6 +29,10 @@ FUNC_RETRY_PAUSE_TIME = int(os.environ.get("RETRY_PAUSE_TIME"))
 
 REDIS_HOST = os.environ.get("ORG_REDIS_HOST")
 REDIS_PORT = int(os.environ.get("ORG_REDIS_PORT"))
+if os.environ.get("ENABLE_CLOUDWATCH_LOGGING") in ["True", "true"]:
+    ENABLE_CLOUDWATCH_LOGGING = True
+else:
+    ENABLE_CLOUDWATCH_LOGGING = False
 
 HEADERS = {
     "Content-Type": "application/json"
