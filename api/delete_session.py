@@ -58,6 +58,8 @@ def delete_session(pod_name: str, session_id: str = None, request_id: str = None
                 }
                 if ("enable_video" in session_data and session_data["enable_video"]) or ("enable_logs" in session_data and session_data["enable_logs"]):
                     background_video_k8s_pod_task.delay(data=data, request_id=current_request_id())
+                else:
+                    k8s_client.delete_pod(namespace=env_info.ORG_NAME, pod_name=pod_name)
             current_app.logger.info(get_session_details_res["msg"])
 
             current_app.logger.info(f"Calling update_session. pod_name: {pod_name}")

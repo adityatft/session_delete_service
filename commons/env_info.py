@@ -8,7 +8,10 @@ import os
 
 HOST = os.environ.get("HOST")
 PORT = os.environ.get("PORT")
-DEBUG_MODE = os.environ.get("DEBUG_MODE")
+if os.environ.get("DEBUG_MODE") in ["True", "true"]:
+    DEBUG_MODE = True
+else:
+    DEBUG_MODE = False
 
 ROOT_URL = os.path.join(os.environ.get("BASE_URL"), os.environ.get("BACKEND_URL"))
 ORG_NAME = os.environ.get("ORG_NAME")
@@ -29,6 +32,10 @@ FUNC_RETRY_PAUSE_TIME = int(os.environ.get("RETRY_PAUSE_TIME"))
 
 REDIS_HOST = os.environ.get("ORG_REDIS_HOST")
 REDIS_PORT = int(os.environ.get("ORG_REDIS_PORT"))
+if os.environ.get("ENABLE_CLOUDWATCH_LOGGING") in ["True", "true"]:
+    ENABLE_CLOUDWATCH_LOGGING = True
+else:
+    ENABLE_CLOUDWATCH_LOGGING = False
 
 HEADERS = {
     "Content-Type": "application/json"
